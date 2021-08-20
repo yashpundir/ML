@@ -1,4 +1,4 @@
-# to be saved in .../Python/Python38/site-packages
+# to be saved in .../Python/Python38/site-packages/
 
 import numpy as np
 import math
@@ -54,9 +54,15 @@ class cm_ratios:
 # McFadden's R pseudo square
 class McFaddens_R2():
     
-    def __init__(self, df, X,y_test,y_pred_prob):
-        self.df = df
-        self.X = X
+    '''
+    McFaddens Pseudo R square, currently works only for dichotomous data
+    y = numpy array of y/labels
+    y_test = numpy array of Y_test labels
+    y_pred_prob = numpy array of predicted probability of labels being True
+    '''
+    
+    def __init__(self, y ,y_test, y_pred_prob):
+        self.y = y
         self.y_test = y_test
         self.y_pred_prob = y_pred_prob
         self.LL_fit, self.LL_mean = 0, 0
@@ -66,22 +72,16 @@ class McFaddens_R2():
     def fit(self):
         # calculating LL_fit
         for i in range(len(self.y_test)):
-            if self.y_test[i]:
-                temp = math.log(self.y_pred_prob[i])
-                self.LL_fit += temp
-            else:
-                temp = math.log(1 - self.y_pred_prob[i])
-                self.LL_fit += temp
-            self.log_likelihood_fit.append(temp)
+            temp = self.y_test[i]*math.log(self.y_pred_prob[i]) + (1-self.y_test[i])*math.log(1 - self.y_pred_prob[i]) 
+            self.log_likelihood_fit.append(temp)        
+        self.LL_fit = sum(self.log_likelihood_fit)
         
         # calculating LL_mean
-        overall_probability = self.df.iloc[:, -1].values.tolist().count(1)/self.X.shape[0]
-        for i in self.y_test:
-            if i:
-                self.LL_mean += math.log(overall_probability)
-            else:
-                self.LL_mean += math.log(1 - overall_probability)
+        overall_probability = self.y.tolist().count(1)/len(self.y)
+        for y in self.y_test:
+            self.LL_mean += y*math.log(overall_probability) + (1-y)*math.log(1 - overall_probability)
         
+        # calculating R2
         self.R2 = 1 - self.LL_fit / self.LL_mean
         return self.R2
 
